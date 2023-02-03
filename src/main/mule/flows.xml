@@ -1,0 +1,71 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:graphql="http://www.mulesoft.org/schema/mule/graphql-router" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/graphql-router http://www.mulesoft.org/schema/mule/graphql-router/current/mule-graphql-router.xsd
+	http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+  <flow name="api-main-flow">
+    <http:listener config-ref="http-listener-config" path="${http.listener.path}"/>
+    <graphql:route config-ref="api-router-config"/>
+  </flow>
+  <flow name="Query.placesNear">
+    <graphql:data-fetcher config-ref="api-router-config" objectTypeName="Query" fieldName="placesNear"/>
+    <ee:transform>
+      <ee:variables>
+        <ee:set-variable variableName="shouldInclude" resource="geo-distance-filter.dwl" />
+      </ee:variables>
+    </ee:transform>
+    <flow-ref name="placesDB"/>
+    <graphql:serialize config-ref="api-router-config" objectTypeName="Query" fieldName="placesNear">
+      <graphql:inbound-content>
+        #[payload filter (place) -> vars.shouldInclude([place])]
+      </graphql:inbound-content>
+    </graphql:serialize>
+  </flow>
+  <flow name="Query.placesByName">
+    <graphql:data-fetcher config-ref="api-router-config" objectTypeName="Query" fieldName="placesByName"/>
+    <ee:transform>
+      <ee:variables>
+        <ee:set-variable variableName="shouldInclude" resource="edit-distance-filter.dwl" />
+      </ee:variables>
+    </ee:transform>
+    <flow-ref name="placesDB"/>
+    <graphql:serialize config-ref="api-router-config" objectTypeName="Query" fieldName="placesByName">
+      <graphql:inbound-content>
+        #[payload filter (place) -> vars.shouldInclude([place])]
+      </graphql:inbound-content>
+    </graphql:serialize>
+  </flow>
+  <flow name="Query.recentPlaces">
+    <graphql:data-fetcher config-ref="api-router-config" objectTypeName="Query" fieldName="recentPlaces"/>
+    <flow-ref name="recentDB" target="recentPlaces"/>
+    <flow-ref name="placesDB"/>
+    <graphql:serialize config-ref="api-router-config" objectTypeName="Query" fieldName="recentPlaces">
+      <graphql:inbound-content>
+        #[payload filter (vars.recentPlaces contains $.name)]
+      </graphql:inbound-content>
+    </graphql:serialize>
+  </flow>
+
+  <flow name="placesDB">
+    <set-payload value='#[
+      fun place(name, latitude, longitude, rating) = {
+        name: name,
+        location: { latitude: latitude, longitude: longitude },
+        rating: rating
+      }
+      ---
+      [
+        place("Obelisco",                      -34.6037372,  -58.3816644, 4),
+        place("Plaza Dorrego",                 -34.6205014,  -58.3718475, 5),
+        place("Autódromo Oscar y Juan Gálvez", -34.6934842,  -58.4591483, 5),
+        place("Salesforce Tower",               37.7897584, -122.3970316, 4),
+        place("Golden Gate",                    37.819939,  -122.4785172, 3),
+        place("Petra",                          30.3287423,   35.4443109, 5),
+        place("Blue Mosque",                    41.0052762,   28.9765448, 4),
+        place("Barajas",                        40.4926586,   -3.5689055, 2),
+        place("Puerta de Alcalá",               40.4199459,   -3.6889499, 3),
+      ]
+    ]'/>
+  </flow>
+  <flow name="recentDB">
+    <set-payload value='#[["Obelisco", "Plaza Dorrego", "Autódromo Oscar y Juan Gálvez"]]'/>
+  </flow>
+</mule>

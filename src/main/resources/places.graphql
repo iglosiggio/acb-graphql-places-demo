@@ -1,0 +1,27 @@
+type Query {
+  """
+  Searches for places near a given location.
+  If no location is given a geoip lookup is
+  performed.
+  """
+  placesNear(location: LocationSearch): [Place]
+  placesByName(name: String!): [Place]
+  recentPlaces: [Place]
+}
+input LocationSearch {
+  latitude: Float!
+  longitude: Float!
+  radius: Float
+}
+type Location {
+  latitude: Float!
+  longitude: Float!
+}
+type Place {
+  name: String!
+  location: Location
+  """
+  From 0 to 5 Stars
+  """
+  rating: Int
+}

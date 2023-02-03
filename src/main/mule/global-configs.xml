@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:graphql="http://www.mulesoft.org/schema/mule/graphql-router" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/graphql-router http://www.mulesoft.org/schema/mule/graphql-router/current/mule-graphql-router.xsd">
+  <http:listener-config name="http-listener-config">
+    <http:listener-connection host="${http.listener.host}" port="${http.listener.port}"/>
+  </http:listener-config>
+  <graphql:config name="api-router-config" api="${api.path}" introspectionEnabled="true"/>
+  <configuration-properties file="${env}-properties.properties"/>
+  <global-property name="env" value="dev"/>
+</mule>
